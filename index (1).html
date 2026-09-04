@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>오늘의 노래 추천</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0F1219;
+    --bg-card: #171B24;
+    --border: #262B38;
+    --text: #ECEDF2;
+    --text-muted: #8B92A5;
+    --accent: #E8A33D;
+    --radius: 18px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    background: radial-gradient(circle at 50% -10%, #1B2030 0%, var(--bg) 55%);
+    color: var(--text);
+    font-family: 'Manrope', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 48px 20px 64px;
+    transition: background 0.6s ease;
+  }
+
+  .app { width: 100%; max-width: 480px; }
+
+  header.top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 28px;
+  }
+
+  header.top .brand {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 1.05rem;
+    letter-spacing: 0.01em;
+  }
+
+  header.top .today {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+  }
+
+  .disc-card, .playlist-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+  }
+
+  .disc-card { margin-bottom: 20px; }
+
+  .disc-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 18px;
+  }
+
+  .disc {
+    width: 168px;
+    height: 168px;
+    transition: transform 0.4s ease;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .disc.spin { animation: spin 26s linear infinite; }
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .status-block { text-align: center; }
+
+  .status-block .mood-name {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 1.8rem;
+    line-height: 1.15;
+    margin: 0;
+    color: var(--accent);
+    transition: color 0.6s ease;
+  }
+
+  .status-block .mood-desc {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    margin: 10px auto 0;
+    max-width: 320px;
+    line-height: 1.55;
+  }
+
+  .mood-chips {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  .chip {
+    font-family: 'Manrope', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: #10131C;
+    color: var(--text-muted);
+    padding: 8px 14px;
+    cursor: pointer;
+  }
+
+  .chip:hover { color: var(--text); border-color: var(--accent); }
+
+  .chip.active {
+    color: #10131C;
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .refresh-row {
+    margin-top: 18px;
+    text-align: center;
+  }
+
+  button.primary {
+    font-family: 'Manrope', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    border-radius: 12px;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: #10131C;
+    padding: 12px 22px;
+    cursor: pointer;
+  }
+
+  button.primary:hover { opacity: 0.9; }
+
+  .chip:focus-visible,
+  button:focus-visible,
+  a.link-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .playlist-card h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 1.15rem;
+    margin: 0 0 4px;
+  }
+
+  .playlist-sub {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin: 0 0 18px;
+  }
+
+  ol.tracklist { list-style: none; margin: 0; padding: 0; }
+
+  ol.tracklist li {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 13px 0;
+    border-top: 1px solid var(--border);
+  }
+
+  ol.tracklist li:first-child { border-top: none; }
+
+  .track-num {
+    font-family: 'Fraunces', serif;
+    font-size: 0.95rem;
+    color: var(--accent);
+    width: 20px;
+    flex-shrink: 0;
+  }
+
+  .track-info { flex: 1; min-width: 0; }
+
+  .track-title {
+    font-size: 0.92rem;
+    font-weight: 600;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .track-artist {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 2px 0 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .track-links { display: flex; gap: 6px; flex-shrink: 0; }
+
+  a.link-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  a.link-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+  footer.note {
+    text-align: center;
+    color: #4B5266;
+    font-size: 0.74rem;
+    margin-top: 22px;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 380px) {
+    .disc { width: 140px; height: 140px; }
+    .status-block .mood-name { font-size: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+    <header class="top">
+      <span class="brand">오늘의 노래 추천</span>
+      <span class="today" id="todayLabel"></span>
+    </header>
+
+    <main>
+      <section class="disc-card">
+        <div class="disc-wrap">
+          <svg class="disc" id="discSvg" viewBox="0 0 100 100" role="img" aria-label="선택된 기분 아이콘">
+            <circle cx="50" cy="50" r="49" fill="#12151E" stroke="#262B38" stroke-width="1"/>
+            <circle cx="50" cy="50" r="40" fill="none" stroke="#20242F" stroke-width="1"/>
+            <circle cx="50" cy="50" r="33" fill="none" stroke="#20242F" stroke-width="1"/>
+            <circle cx="50" cy="50" r="26" fill="none" stroke="#20242F" stroke-width="1"/>
+            <circle cx="50" cy="50" r="19" fill="#171B24" stroke="var(--accent)" stroke-width="1.4"/>
+            <g id="moodIcon" transform="translate(50,50)" stroke="var(--accent)" fill="var(--accent)"></g>
+            <circle cx="50" cy="50" r="2.2" fill="#0F1219" stroke="var(--accent)" stroke-width="1"/>
+          </svg>
+        </div>
+
+        <div class="status-block">
+          <p class="mood-name" id="moodName">기분을 골라보세요</p>
+          <p class="mood-desc" id="moodDesc">아래에서 기분을 고르거나, 바로 추천받기를 눌러보세요.</p>
+        </div>
+
+        <div class="mood-chips" id="moodChips"></div>
+
+        <div class="refresh-row">
+          <button class="primary" id="refreshBtn" type="button">노래 추천받기</button>
+        </div>
+      </section>
+
+      <section class="playlist-card">
+        <h2>추천 플레이리스트</h2>
+        <p class="playlist-sub" id="playlistSub">추천받기를 누르면 곡이 채워져요.</p>
+        <ol class="tracklist" id="trackList"></ol>
+      </section>
+    </main>
+
+    <footer class="note">
+      원할 때마다 추천받기를 눌러 새로운 곡을 받아보세요.<br/>
+      기분을 고르면 그 분위기에 맞는 곡만 추천돼요.
+    </footer>
+  </div>
+
+<script>
+(function () {
+  "use strict";
+
+  const MOODS = {
+    energetic: {
+      label: "신나는",
+      accent: "#E8A33D",
+      desc: "기분을 확 끌어올려 줄, 밝고 신나는 곡들이에요.",
+      icon: `
+        <circle r="8" />
+        <g stroke-width="2.4" stroke-linecap="round">
+          <line x1="0" y1="-14" x2="0" y2="-11" />
+          <line x1="0" y1="11" x2="0" y2="14" />
+          <line x1="-14" y1="0" x2="-11" y2="0" />
+          <line x1="14" y1="0" x2="11" y2="0" />
+          <line x1="-9.9" y1="-9.9" x2="-7.8" y2="-7.8" />
+          <line x1="9.9" y1="9.9" x2="7.8" y2="7.8" />
+          <line x1="-9.9" y1="9.9" x2="-7.8" y2="7.8" />
+          <line x1="9.9" y1="-9.9" x2="7.8" y2="-7.8" />
+        </g>`,
+      tracks: [
+        { title: "Here Comes the Sun", artist: "The Beatles" },
+        { title: "Walking on Sunshine", artist: "Katrina and the Waves" },
+        { title: "Dynamite", artist: "BTS" },
+        { title: "Good as Hell", artist: "Lizzo" },
+        { title: "Sunday Morning", artist: "Maroon 5" },
+        { title: "Beautiful Day", artist: "U2" },
+        { title: "좋은 날", artist: "아이유" },
+        { title: "Uptown Funk", artist: "Mark Ronson feat. Bruno Mars" },
+        { title: "Can't Stop the Feeling!", artist: "Justin Timberlake" },
+        { title: "Blinding Lights", artist: "The Weeknd" },
+        { title: "Levitating", artist: "Dua Lipa" },
+        { title: "HAPPY", artist: "Pharrell Williams" },
+        { title: "I Gotta Feeling", artist: "The Black Eyed Peas" },
+        { title: "September", artist: "Earth, Wind & Fire" },
+        { title: "Super Shy", artist: "NewJeans" },
+        { title: "Pink Venom", artist: "BLACKPINK" },
+        { title: "Gee", artist: "Girls' Generation" },
+        { title: "ELEVEN", artist: "IVE" },
+        { title: "Dance Monkey", artist: "Tones and I" },
+        { title: "Mr. Brightside", artist: "The Killers" },
+        { title: "I Wanna Dance with Somebody", artist: "Whitney Houston" },
+        { title: "Idol", artist: "YOASOBI" },
+        { title: "前前前世", artist: "RADWIMPS" },
+        { title: "紅蓮華", artist: "LiSA" },
+        { title: "残酷な天使のテーゼ", artist: "高橋洋子" },
+        { title: "怪物", artist: "YOASOBI" }
+      ]
+    },
+    mellow: {
+      label: "잔잔한",
+      accent: "#8C93A6",
+      desc: "부담 없이 배경처럼 흘려 들을 수 있는, 잔잔한 곡들이에요.",
+      icon: `<path d="M -22 8 Q -28 8 -28 1 Q -28 -6 -21 -6 Q -20 -15 -10 -15 Q -2 -15 -1 -8 Q 8 -10 12 -3 Q 20 -3 20 4 Q 20 8 15 8 Z" stroke-width="2" fill-opacity="0.15" />`,
+      tracks: [
+        { title: "밤편지", artist: "아이유" },
+        { title: "Circles", artist: "Post Malone" },
+        { title: "Coffee", artist: "Beabadoobee" },
+        { title: "Yellow", artist: "Coldplay" },
+        { title: "Slow Dancing in a Burning Room", artist: "John Mayer" },
+        { title: "그대라는 시", artist: "정승환" },
+        { title: "Skinny Love", artist: "Bon Iver" },
+        { title: "Someone Like You", artist: "Adele" },
+        { title: "Stay With Me", artist: "찬열, 펀치" },
+        { title: "Best Part", artist: "Daniel Caesar feat. H.E.R." },
+        { title: "All of Me", artist: "John Legend" },
+        { title: "첫사랑", artist: "김필" },
+        { title: "Falling Slowly", artist: "Glen Hansard, Marketa Irglova" },
+        { title: "La Vie en Rose", artist: "Édith Piaf" },
+        { title: "Autumn Leaves", artist: "Eva Cassidy" },
+        { title: "Aruarian Dance", artist: "Nujabes" },
+        { title: "Redbone", artist: "Childish Gambino" },
+        { title: "Photograph", artist: "Ed Sheeran" },
+        { title: "Lemon", artist: "米津玄師" },
+        { title: "Pretender", artist: "Official髭男dism" },
+        { title: "マリーゴールド", artist: "あいみょん" },
+        { title: "First Love", artist: "宇多田ヒカル" },
+        { title: "白日", artist: "King Gnu" }
+      ]
+    },
+    dreamy: {
+      label: "몽환적인",
+      accent: "#A79F8C",
+      desc: "또렷한 비트보다는 여백이 있는, 몽환적인 곡들이에요.",
+      icon: `
+        <path d="M -22 -2 Q -28 -2 -28 -9 Q -28 -16 -21 -16 Q -20 -25 -10 -25 Q -2 -25 -1 -18 Q 8 -20 12 -13 Q 20 -13 20 -6 Q 20 -2 15 -2 Z" stroke-width="2" fill-opacity="0.15" />
+        <g stroke-width="2.2" stroke-linecap="round">
+          <line x1="-20" y1="9" x2="20" y2="9" />
+          <line x1="-16" y1="16" x2="16" y2="16" />
+        </g>`,
+      tracks: [
+        { title: "River Flows in You", artist: "Yiruma" },
+        { title: "Weightless", artist: "Marconi Union" },
+        { title: "Holocene", artist: "Bon Iver" },
+        { title: "안개", artist: "정훈희" },
+        { title: "Breathe Me", artist: "Sia" },
+        { title: "Motion Picture Soundtrack", artist: "Radiohead" },
+        { title: "To Build a Home", artist: "The Cinematic Orchestra" },
+        { title: "Dreams", artist: "Fleetwood Mac" },
+        { title: "Space Song", artist: "Beach House" },
+        { title: "Porcelain", artist: "Moby" },
+        { title: "Intro", artist: "The xx" },
+        { title: "Midnight City", artist: "M83" },
+        { title: "Clair de Lune", artist: "Claude Debussy" },
+        { title: "Teardrop", artist: "Massive Attack" },
+        { title: "Comptine d'un autre été", artist: "Yann Tiersen" },
+        { title: "Stay", artist: "Rihanna feat. Mikky Ekko" },
+        { title: "Weird Fishes/Arpeggi", artist: "Radiohead" },
+        { title: "プラスティック・ラブ", artist: "竹内まりや" },
+        { title: "スパークル", artist: "RADWIMPS" },
+        { title: "なごり雪", artist: "イルカ" }
+      ]
+    },
+    rainyVibe: {
+      label: "비 오는 감성",
+      accent: "#4C86B8",
+      desc: "창밖을 보며 듣기 좋은, 비 오는 날의 감성 곡들이에요.",
+      icon: `
+        <path d="M -22 -2 Q -28 -2 -28 -9 Q -28 -16 -21 -16 Q -20 -25 -10 -25 Q -2 -25 -1 -18 Q 8 -20 12 -13 Q 20 -13 20 -6 Q 20 -2 15 -2 Z" stroke-width="2" fill-opacity="0.15" />
+        <g stroke-width="2.4" stroke-linecap="round">
+          <line x1="-14" y1="8" x2="-17" y2="17" />
+          <line x1="-1" y1="8" x2="-4" y2="17" />
+          <line x1="12" y1="8" x2="9" y2="17" />
+        </g>`,
+      tracks: [
+        { title: "비도 오고 그래서", artist: "헤이즈, 신용재" },
+        { title: "Set Fire to the Rain", artist: "Adele" },
+        { title: "November Rain", artist: "Guns N' Roses" },
+        { title: "Purple Rain", artist: "Prince" },
+        { title: "Kiss the Rain", artist: "Yiruma" },
+        { title: "Rainy Days and Mondays", artist: "The Carpenters" },
+        { title: "I Wish It Would Rain Down", artist: "Phil Collins" },
+        { title: "Have You Ever Seen the Rain", artist: "Creedence Clearwater Revival" },
+        { title: "Fire and Rain", artist: "James Taylor" },
+        { title: "Umbrella", artist: "Rihanna feat. Jay-Z" },
+        { title: "Singin' in the Rain", artist: "Gene Kelly" },
+        { title: "No Rain", artist: "Blind Melon" },
+        { title: "Crying in the Rain", artist: "a-ha" },
+        { title: "雨のち晴レルヤ", artist: "ケツメイシ" }
+      ]
+    },
+    cozy: {
+      label: "포근한",
+      accent: "#9FC1DE",
+      desc: "포근하고 조용하게, 마음을 감싸주는 곡들이에요.",
+      icon: `
+        <path d="M -22 -2 Q -28 -2 -28 -9 Q -28 -16 -21 -16 Q -20 -25 -10 -25 Q -2 -25 -1 -18 Q 8 -20 12 -13 Q 20 -13 20 -6 Q 20 -2 15 -2 Z" stroke-width="2" fill-opacity="0.15" />
+        <g stroke-width="2.2" stroke-linecap="round">
+          <line x1="-16" y1="8" x2="-16" y2="16" /><line x1="-20" y1="12" x2="-12" y2="12" />
+          <line x1="0" y1="10" x2="0" y2="18" /><line x1="-4" y1="14" x2="4" y2="14" />
+          <line x1="13" y1="8" x2="13" y2="16" /><line x1="9" y1="12" x2="17" y2="12" />
+        </g>`,
+      tracks: [
+        { title: "Let It Snow, Let It Snow, Let It Snow", artist: "Dean Martin" },
+        { title: "첫눈처럼 너에게 가겠다", artist: "에일리" },
+        { title: "Snowman", artist: "Sia" },
+        { title: "River", artist: "Joni Mitchell" },
+        { title: "Winter Wonderland", artist: "Tony Bennett" },
+        { title: "Snow (Hey Oh)", artist: "Red Hot Chili Peppers" },
+        { title: "눈,꽃,놀이", artist: "아이유, 오혁" },
+        { title: "Fly Me to the Moon", artist: "Frank Sinatra" },
+        { title: "What a Wonderful World", artist: "Louis Armstrong" },
+        { title: "Home", artist: "Edward Sharpe & The Magnetic Zeros" },
+        { title: "고백", artist: "폴킴" },
+        { title: "Thinking Out Loud", artist: "Ed Sheeran" },
+        { title: "Sweater Weather", artist: "The Neighbourhood" },
+        { title: "Iris", artist: "Goo Goo Dolls" },
+        { title: "Just the Two of Us", artist: "Bill Withers, Grover Washington Jr." },
+        { title: "家族になろうよ", artist: "福山雅治" },
+        { title: "花は咲く", artist: "花は咲くプロジェクト" }
+      ]
+    },
+    intense: {
+      label: "강렬한",
+      accent: "#9169C9",
+      desc: "에너지 있게 몰아붙이는, 강렬한 곡들이에요.",
+      icon: `
+        <path d="M -22 -6 Q -28 -6 -28 -13 Q -28 -20 -21 -20 Q -20 -29 -10 -29 Q -2 -29 -1 -22 Q 8 -24 12 -17 Q 20 -17 20 -10 Q 20 -6 15 -6 Z" stroke-width="2" fill-opacity="0.15" />
+        <path d="M 2 -4 L -6 10 L 1 10 L -4 24 L 12 6 L 4 6 Z" stroke-width="1.5" />`,
+      tracks: [
+        { title: "Thunder", artist: "Imagine Dragons" },
+        { title: "Thunderstruck", artist: "AC/DC" },
+        { title: "Riders on the Storm", artist: "The Doors" },
+        { title: "Rolling in the Deep", artist: "Adele" },
+        { title: "Titanium", artist: "David Guetta feat. Sia" },
+        { title: "Nightcall", artist: "Kavinsky" },
+        { title: "Enter Sandman", artist: "Metallica" },
+        { title: "Seven Nation Army", artist: "The White Stripes" },
+        { title: "HUMBLE.", artist: "Kendrick Lamar" },
+        { title: "DDU-DU DDU-DU", artist: "BLACKPINK" },
+        { title: "Bang Bang Bang", artist: "BIGBANG" },
+        { title: "Immigrant Song", artist: "Led Zeppelin" },
+        { title: "Killing In The Name", artist: "Rage Against the Machine" },
+        { title: "Till I Collapse", artist: "Eminem feat. Nate Dogg" },
+        { title: "Levels", artist: "Avicii" },
+        { title: "POWER", artist: "Kanye West" },
+        { title: "紅蓮の弓矢", artist: "Linked Horizon" },
+        { title: "廻廻奇譚", artist: "Eve" }
+      ]
+    }
+  };
+
+  const MOOD_KEYS = Object.keys(MOODS);
+  let currentMood = null; // null = 랜덤
+
+  const els = {
+    today: document.getElementById("todayLabel"),
+    moodName: document.getElementById("moodName"),
+    moodDesc: document.getElementById("moodDesc"),
+    icon: document.getElementById("moodIcon"),
+    disc: document.getElementById("discSvg"),
+    trackList: document.getElementById("trackList"),
+    playlistSub: document.getElementById("playlistSub"),
+    chips: document.getElementById("moodChips"),
+    refreshBtn: document.getElementById("refreshBtn"),
+    root: document.documentElement
+  };
+
+  function setToday() {
+    const now = new Date();
+    els.today.textContent = now.toLocaleDateString("ko-KR", {
+      year: "numeric", month: "long", day: "numeric", weekday: "short"
+    });
+  }
+
+  function buildChips() {
+    const allChip = document.createElement("button");
+    allChip.type = "button";
+    allChip.className = "chip active";
+    allChip.textContent = "랜덤";
+    allChip.dataset.mood = "";
+    els.chips.appendChild(allChip);
+
+    MOOD_KEYS.forEach((key) => {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "chip";
+      chip.textContent = MOODS[key].label;
+      chip.dataset.mood = key;
+      els.chips.appendChild(chip);
+    });
+
+    els.chips.addEventListener("click", (e) => {
+      const btn = e.target.closest(".chip");
+      if (!btn) return;
+      currentMood = btn.dataset.mood || null;
+      [...els.chips.querySelectorAll(".chip")].forEach((c) => c.classList.toggle("active", c === btn));
+      recommend();
+    });
+  }
+
+  function shuffle(arr) {
+    const copy = arr.slice();
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+  }
+
+  function recommend() {
+    const key = currentMood || MOOD_KEYS[Math.floor(Math.random() * MOOD_KEYS.length)];
+    const data = MOODS[key];
+
+    els.root.style.setProperty("--accent", data.accent);
+    els.icon.innerHTML = data.icon;
+    els.disc.classList.add("spin");
+    els.moodName.textContent = data.label;
+    els.moodDesc.textContent = data.desc;
+
+    const tracks = shuffle(data.tracks).slice(0, 5);
+    els.playlistSub.textContent = `${data.label} 분위기의 곡 ${tracks.length}가지예요.`;
+    els.trackList.innerHTML = "";
+    tracks.forEach((t, i) => {
+      const li = document.createElement("li");
+      const q = encodeURIComponent(`${t.title} ${t.artist}`);
+      li.innerHTML = `
+        <span class="track-num">${i + 1}</span>
+        <span class="track-info">
+          <p class="track-title">${t.title}</p>
+          <p class="track-artist">${t.artist}</p>
+        </span>
+        <span class="track-links">
+          <a class="link-btn" href="https://open.spotify.com/search/${q}" target="_blank" rel="noopener" aria-label="${t.title} Spotify에서 검색">S</a>
+          <a class="link-btn" href="https://music.youtube.com/search?q=${q}" target="_blank" rel="noopener" aria-label="${t.title} YouTube Music에서 검색">Y</a>
+        </span>`;
+      els.trackList.appendChild(li);
+    });
+  }
+
+  els.refreshBtn.addEventListener("click", recommend);
+
+  setToday();
+  buildChips();
+  recommend();
+})();
+</script>
+</body>
+</html>
